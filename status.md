@@ -4,7 +4,7 @@
 
 ## 현재 상태
 
-TASK-01과 TASK-02를 완료했다. GitHub `main`과 Cloudflare Workers Builds 연결, 기존 Worker 자동 배포, 공개 엔드포인트, Webhook 및 실제 댓글 → DM을 재검증했다. TASK-03도 완료해 APAC D1 `instagram-dm-db`를 생성하고 `DB` 바인딩, 초기 migration과 공통 키워드 이전을 로컬·원격에서 검증했다.
+TASK-01부터 TASK-03까지 완료했다. GitHub `main`과 Cloudflare Workers Builds 연결, 실제 댓글 → DM 재검증, APAC D1 `instagram-dm-db` 생성과 초기 migration을 마쳤다. 기존 9개 바인딩을 보존한 채 `DB` 바인딩이 운영 Worker에 배포됐고 `/health`도 정상이다.
 
 설계 문서에는 실제 댓글 → DM 성공 이력이 있다. 이번 작업에서 운영 환경을 재검증한 것은 아니다. 현재 코드는 환경변수 기반이며 D1·관리자 인증/UI·팔로우 확인이 없다. 기존 키워드 파서는 쉼표와 줄바꿈을 허용하며 contains 모드가 아니면 정확히 일치해야 한다. TASK-01에서는 이를 보존하고 TASK-07에서 새 정책으로 전환한다.
 
@@ -27,9 +27,9 @@ TASK-01과 TASK-02를 완료했다. GitHub `main`과 Cloudflare Workers Builds �
 
 ## 다음 진행 사항
 
-1. TASK-03 변경을 GitHub에 푸시해 기존 Worker에 `DB` 바인딩을 배포한다.
-2. 배포 후 기존 9개 바인딩, D1 `DB` 바인딩과 `/health`를 확인한다.
-3. TASK-04에서 D1 조회·UPSERT 설정 모듈을 구현한다.
+1. TASK-04에서 D1 조회·UPSERT 설정 모듈을 구현한다.
+2. SQL 파라미터 바인딩, 설정 없음, 빈 메시지 자동 OFF와 OFF 시 값 보존을 테스트한다.
+3. DB 모듈만 추가하고 Webhook 실행 경로 전환은 TASK-07까지 보류한다.
 
 ## 검증이 필요한 결정
 

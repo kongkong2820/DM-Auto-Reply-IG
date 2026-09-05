@@ -33,6 +33,9 @@ Cloudflare D1 `instagram-dm-db`를 APAC 위치로 생성하고 Worker 바인딩 
 | migration 기록 | `SELECT` from `d1_migrations` | `0001_init.sql` 기록 | 기록 확인 | 통과 |
 | Wrangler 번들 | `npm run deploy:check` | `env.DB` 포함 | `instagram-dm-db` D1 바인딩 확인 | 통과 |
 | 기존 코드 회귀 | `npm test` | 전체 통과 | 13개 통과, 실패 0 | 통과 |
+| Git 자동 배포 | GitHub Workers Builds check | 기존 Worker 배포 | check 성공, 새 버전 100% 배포 | 통과 |
+| 운영 바인딩 | 배포 버전 조회 | 기존 9개 + `DB` | 기존 바인딩 보존 및 D1 추가 | 통과 |
+| 운영 health | `GET /health` | 기존 기능 정상 | 200, 자동응답·키워드·메시지 설정 유지 | 통과 |
 
 ## 실제 환경 확인
 
@@ -42,7 +45,7 @@ D1 database ID는 Cloudflare가 Wrangler 설정에 사용하도록 제공하는 
 
 ## 남은 문제와 후속 작업
 
-차단 사항은 없다. 다음 TASK에서 SQL 파라미터 바인딩을 사용하는 DB 모듈을 구현한다. 운영 Worker는 아직 D1을 읽지 않으며 기존 환경변수 기반 자동응답을 그대로 사용한다.
+차단 사항은 없다. `DB` 바인딩은 운영 Worker에 배포됐지만 Worker 코드는 아직 D1을 읽지 않으며 기존 환경변수 기반 자동응답을 그대로 사용한다. 다음 TASK에서 SQL 파라미터 바인딩을 사용하는 DB 모듈을 구현한다.
 
 ## 완료 판정
 
