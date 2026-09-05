@@ -1,10 +1,10 @@
 # 개발 진행 현황
 
-기준일: 2026-09-05
+기준일: 2026-09-06
 
 ## 현재 상태
 
-TASK-01을 완료해 현재 Cloudflare에 배포된 소스인 `worker.js`를 `src/index.js` 진입점으로 옮겼다. package.json, 잠금 파일, Wrangler 설정, 로컬 환경변수 예시와 회귀 테스트를 구성했다. Node 테스트 13개와 Wrangler dry-run 및 로컬 라우트 smoke test가 통과했다. 원격 배포는 수행하지 않았으며 로컬 폴더에는 아직 `.git`이 없다.
+TASK-01을 완료하고 TASK-02를 진행 중이다. 로컬 Git `main`을 GitHub `kongkong2820/DM-Auto-Reply-IG`에 푸시했으며 Cloudflare OAuth 로그인과 기존 Worker의 배포·바인딩 확인을 마쳤다. 운영 compatibility date `2026-09-04`를 로컬 설정에 반영했다. Workers Builds의 GitHub App 연결 승인이 남아 있으며 아직 Git 기반 운영 배포는 수행되지 않았다.
 
 설계 문서에는 실제 댓글 → DM 성공 이력이 있다. 이번 작업에서 운영 환경을 재검증한 것은 아니다. 현재 코드는 환경변수 기반이며 D1·관리자 인증/UI·팔로우 확인이 없다. 기존 키워드 파서는 쉼표와 줄바꿈을 허용하며 contains 모드가 아니면 정확히 일치해야 한다. TASK-01에서는 이를 보존하고 TASK-07에서 새 정책으로 전환한다.
 
@@ -13,7 +13,7 @@ TASK-01을 완료해 현재 Cloudflare에 배포된 소스인 `worker.js`를 `sr
 | 순서 | 작업 | 선행 작업 | 상태 | 결과 |
 | --- | --- | --- | --- | --- |
 | 01 | [로컬 Worker 프로젝트화](docs/tasks/TASK-01.md) | 없음 | 완료 | [RESULT-01](docs/results/RESULT-01.md) |
-| 02 | [GitHub 및 기존 Worker 배포 연결](docs/tasks/TASK-02.md) | TASK-01 | 대기 | [RESULT-02](docs/results/RESULT-02.md) |
+| 02 | [GitHub 및 기존 Worker 배포 연결](docs/tasks/TASK-02.md) | TASK-01 | 진행 중 | [RESULT-02](docs/results/RESULT-02.md) |
 | 03 | [D1 생성과 초기 마이그레이션](docs/tasks/TASK-03.md) | TASK-02 | 대기 | [RESULT-03](docs/results/RESULT-03.md) |
 | 04 | [D1 설정 저장 모듈](docs/tasks/TASK-04.md) | TASK-03 | 대기 | [RESULT-04](docs/results/RESULT-04.md) |
 | 05 | [Instagram API 분리와 릴스 응답 검증](docs/tasks/TASK-05.md) | TASK-04 | 대기 | [RESULT-05](docs/results/RESULT-05.md) |
@@ -27,9 +27,9 @@ TASK-01을 완료해 현재 Cloudflare에 배포된 소스인 `worker.js`를 `sr
 
 ## 다음 진행 사항
 
-1. TASK-02에서 Git 저장소를 초기화하고 연결할 GitHub 저장소를 확인한다.
-2. 커밋 대상에서 `정보`, Secret, 로컬 Wrangler 상태가 제외되는지 확인한다.
-3. GitHub와 기존 Worker의 Builds 연결 설정을 확인하고 기존 URL 및 댓글 → DM을 재검증한다.
+1. Cloudflare Dashboard의 기존 Worker `Settings → Builds`에서 GitHub App을 승인한다.
+2. `kongkong2820/DM-Auto-Reply-IG`의 `main`과 루트 `/`, `npx wrangler deploy`를 연결한다.
+3. Git 빌드 배포 후 기존 URL, Webhook 검증 및 실제 댓글 → DM을 재검증한다.
 
 ## 검증이 필요한 결정
 
