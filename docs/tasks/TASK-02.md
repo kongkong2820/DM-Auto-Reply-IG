@@ -1,6 +1,6 @@
 # TASK-02 — GitHub 및 기존 Worker 배포 연결
 
-- 상태: 진행 중
+- 상태: 완료
 - 선행 작업: TASK-01
 - 설계 근거: 설계 §30–31, §38 STEP 2
 - 결과 문서: [RESULT-02](../results/RESULT-02.md)
@@ -15,7 +15,7 @@
 ## 완료 조건 및 검증
 
 - [x] GitHub에서 기존 Worker로 배포되고 기존 URL을 유지한다.
-- [ ] /health, Webhook 검증 및 실제 댓글 → DM을 재검증한다.
+- [x] /health, Webhook 검증 및 실제 댓글 → DM을 재검증한다.
 - [x] 커밋 대상과 이력에 실제 Secret이 없는지 확인한다.
 
 ## 기록 원칙

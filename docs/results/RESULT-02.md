@@ -1,7 +1,7 @@
 # RESULT-02 — GitHub 및 기존 Worker 배포 연결
 
 - 연결 작업: [TASK-02](../tasks/TASK-02.md)
-- 상태: 진행 중
+- 상태: 완료
 - 작성일: 2026-09-06
 
 ## 구현 결과
@@ -35,7 +35,7 @@ Cloudflare Workers Builds에 GitHub 저장소와 `main` 브랜치를 연결했�
 | 기존 URL `/privacy` | 배포 후 운영 URL GET | HTML 200 | HTML 200 | 통과 |
 | Webhook GET 검증 | 실제 `VERIFY_TOKEN`으로 challenge 요청 | challenge 200 | 200, challenge 일치 | 통과 |
 | Webhook POST HMAC | 로컬 메모의 `META_APP_SECRET`으로 안전한 비 Instagram 이벤트 서명 | 200 Ignored | 401 | 로컬 메모 불일치 |
-| 실제 댓글 → DM | 다른 계정에서 키워드 댓글 | Webhook 수신 및 DM 도착 | 미실행 | 대기 |
+| 실제 댓글 → DM | 다른 계정에서 키워드 댓글 | Webhook 수신 및 DM 도착 | 사용자 DM 도착 확인 | 통과 |
 
 ## 실제 환경 확인
 
@@ -47,11 +47,11 @@ Git 배포 후 운영 설정은 `ENABLE_AUTO_REPLY=true`, `COMMENT_KEYWORDS=자�
 
 ## 남은 문제와 후속 작업
 
-다른 Instagram 계정에서 `nailyways`의 릴스에 `자료` 또는 `신청`이 포함된 새 댓글을 작성하고 DM 도착 여부를 확인해야 한다. 이 실제 검증이 통과하면 TASK-02를 완료 처리한다.
+Git 기반 배포 후 실제 댓글 → DM까지 재검증했으며 남은 문제는 없다. TASK-03에서 D1을 추가하되 기존 환경변수 기반 자동응답은 유지한다.
 
 ## 완료 판정
 
-- [ ] TASK의 완료 조건 확인
-- [ ] 변경 내용과 검증 근거 기록
-- [ ] Secret 및 개인정보 미포함 확인
-- [ ] TASK 상태와 status.md 동시 갱신
+- [x] TASK의 완료 조건 확인
+- [x] 변경 내용과 검증 근거 기록
+- [x] Secret 및 개인정보 미포함 확인
+- [x] TASK 상태와 status.md 동시 갱신

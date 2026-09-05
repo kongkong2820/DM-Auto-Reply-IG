@@ -19,7 +19,7 @@ Instagram 릴스 댓글에 설정된 키워드가 포함되면 자동 DM을 보�
 - [TASK 문서](docs/tasks/): 작업별 진행 사항과 완료 조건
 - [RESULT 문서](docs/results/): TASK와 같은 번호의 구현·검증 결과
 
-TASK-01 로컬 프로젝트화를 완료했고 [TASK-02](docs/tasks/TASK-02.md)를 진행 중이다. GitHub `main`에서 기존 Worker로 이어지는 Cloudflare Workers Builds 자동 배포가 확인됐다. 실제 키워드 댓글 → DM 재검증이 남아 있으며 상세 내용은 [RESULT-02](docs/results/RESULT-02.md)에 기록한다.
+TASK-01부터 TASK-03까지 완료했다. GitHub `main`에서 기존 Worker로 이어지는 Cloudflare Workers Builds 자동 배포와 실제 댓글 → DM을 확인했다. D1 `instagram-dm-db`에는 릴스별 설정 테이블과 공통 설정 테이블이 준비됐으며 상세 내용은 [RESULT-03](docs/results/RESULT-03.md)에 기록한다.
 
 ## 현재 파일 구조
 
@@ -32,6 +32,8 @@ TASK-01 로컬 프로젝트화를 완료했고 [TASK-02](docs/tasks/TASK-02.md)�
 ├── package-lock.json
 ├── wrangler.jsonc
 ├── .dev.vars.example
+├── migrations/
+│   └── 0001_init.sql                # D1 초기 스키마와 공통 키워드
 ├── instagram_dm_auto_reply_design.md # 설계
 ├── status.md                         # 개발 순서 및 현황
 ├── docs/
@@ -41,7 +43,7 @@ TASK-01 로컬 프로젝트화를 완료했고 [TASK-02](docs/tasks/TASK-02.md)�
 └── README.md
 ```
 
-`migrations/`와 D1 바인딩은 TASK-03에서 추가한다.
+`wrangler.jsonc`의 `DB` 바인딩은 Cloudflare D1 `instagram-dm-db`를 가리킨다. Worker 코드는 아직 D1을 읽지 않으며 TASK-04에서 DB 모듈을 추가한다.
 
 ## 로컬 실행과 검증
 
@@ -61,6 +63,15 @@ npm run dev
 ```bash
 npm run deploy:check
 ```
+
+D1 migration은 로컬과 원격을 명확히 구분해 실행한다.
+
+```bash
+npm run db:migrate:local
+npm run db:migrate:remote
+```
+
+원격 migration은 Cloudflare의 실제 D1을 변경하므로 적용 전 SQL과 대상 DB 이름을 확인한다.
 
 `npm run deploy`는 기존 이름의 운영 Worker를 변경하므로 TASK-02에서 원격 설정과 커밋 내용을 확인한 뒤 사용한다.
 

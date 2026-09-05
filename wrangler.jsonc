@@ -4,5 +4,12 @@
   "main": "src/index.js",
   "compatibility_date": "2026-09-04",
   "workers_dev": true,
-  "keep_vars": true
+  "keep_vars": true,
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "instagram-dm-db",
+      "database_id": "5f728e04-8afc-40a5-a9c7-b4331befd88d"
+    }
+  ]
 }
