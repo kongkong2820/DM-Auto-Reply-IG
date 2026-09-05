@@ -19,7 +19,7 @@ Instagram 릴스 댓글에 설정된 키워드가 포함되면 자동 DM을 보�
 - [TASK 문서](docs/tasks/): 작업별 진행 사항과 완료 조건
 - [RESULT 문서](docs/results/): TASK와 같은 번호의 구현·검증 결과
 
-TASK-01 로컬 프로젝트화를 완료했고 [TASK-02](docs/tasks/TASK-02.md)를 진행 중이다. GitHub `main` 푸시는 완료됐으며 Cloudflare Workers Builds 연결과 Git 기반 운영 배포 검증이 남아 있다. 상세 진행 내용은 [RESULT-02](docs/results/RESULT-02.md)에 기록한다.
+TASK-01 로컬 프로젝트화를 완료했고 [TASK-02](docs/tasks/TASK-02.md)를 진행 중이다. GitHub `main`에서 기존 Worker로 이어지는 Cloudflare Workers Builds 자동 배포가 확인됐다. 실제 키워드 댓글 → DM 재검증이 남아 있으며 상세 내용은 [RESULT-02](docs/results/RESULT-02.md)에 기록한다.
 
 ## 현재 파일 구조
 

@@ -4,7 +4,7 @@
 
 ## 현재 상태
 
-TASK-01을 완료하고 TASK-02를 진행 중이다. 로컬 Git `main`을 GitHub `kongkong2820/DM-Auto-Reply-IG`에 푸시했으며 Cloudflare OAuth 로그인과 기존 Worker의 배포·바인딩 확인을 마쳤다. 운영 compatibility date `2026-09-04`를 로컬 설정에 반영했다. Workers Builds의 GitHub App 연결 승인이 남아 있으며 아직 Git 기반 운영 배포는 수행되지 않았다.
+TASK-01을 완료하고 TASK-02를 진행 중이다. GitHub `main`과 Cloudflare Workers Builds 연결 및 기존 Worker 자동 배포가 성공했다. 기존 URL, 9개 바인딩, compatibility date `2026-09-04`가 유지됐고 `/`, `/health`, `/privacy`와 GET Webhook 검증이 통과했다. 다른 Instagram 계정의 실제 키워드 댓글 → DM 재검증만 남아 있다.
 
 설계 문서에는 실제 댓글 → DM 성공 이력이 있다. 이번 작업에서 운영 환경을 재검증한 것은 아니다. 현재 코드는 환경변수 기반이며 D1·관리자 인증/UI·팔로우 확인이 없다. 기존 키워드 파서는 쉼표와 줄바꿈을 허용하며 contains 모드가 아니면 정확히 일치해야 한다. TASK-01에서는 이를 보존하고 TASK-07에서 새 정책으로 전환한다.
 
@@ -27,9 +27,9 @@ TASK-01을 완료하고 TASK-02를 진행 중이다. 로컬 Git `main`을 GitHub
 
 ## 다음 진행 사항
 
-1. Cloudflare Dashboard의 기존 Worker `Settings → Builds`에서 GitHub App을 승인한다.
-2. `kongkong2820/DM-Auto-Reply-IG`의 `main`과 루트 `/`, `npx wrangler deploy`를 연결한다.
-3. Git 빌드 배포 후 기존 URL, Webhook 검증 및 실제 댓글 → DM을 재검증한다.
+1. 다른 Instagram 계정으로 `nailyways`의 릴스에 `자료` 또는 `신청`이 포함된 새 댓글을 작성한다.
+2. Instagram DM 도착 여부를 확인한다.
+3. 결과를 RESULT-02에 기록하고 TASK-02를 완료한 뒤 TASK-03으로 진행한다.
 
 ## 검증이 필요한 결정
 
