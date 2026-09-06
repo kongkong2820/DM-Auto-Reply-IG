@@ -58,7 +58,7 @@ Worker 코드와 `.dev.vars.example`에서 `PRIVATE_REPLY_MESSAGE`, Runtime `COM
 ## 남은 문제와 후속 작업
 
 - D1 `0002_follow_confirmation_flow.sql`을 운영 DB에 적용했다.
-- D1 `0003_common_follow_messages.sql`을 운영 DB에 적용해야 한다.
+- D1 `0003_common_follow_messages.sql`을 운영 DB에 적용했다. 기존 릴스별 컬럼은 데이터 삭제를 피하기 위해 사용하지 않는 상태로 보존했다.
 - Meta Webhook `messages` 필드는 구독 상태임을 사용자가 확인했다.
 - 빠른 답장 버튼 선택 후 팔로우·미팔로우 분기를 실제 확인해야 한다.
 - 통합 검증이 성공하면 운영의 `PRIVATE_REPLY_MESSAGE`, `COMMENT_KEYWORDS`, `KEYWORD_MATCH_MODE`를 제거한다.
