@@ -25,6 +25,52 @@ export async function getReelConfig(db, reelId) {
   };
 }
 
+export async function getReelConfigs(db, reelIds) {
+  if (!Array.isArray(reelIds)) {
+    throw new TypeError("reelIds must be an array");
+  }
+
+  const normalizedIds = [
+    ...new Set(
+      reelIds.map((reelId) =>
+        requireIdentifier(reelId, "reelId")
+      )
+    )
+  ];
+
+  if (normalizedIds.length === 0) {
+    return new Map();
+  }
+
+  const placeholders = normalizedIds
+    .map(() => "?")
+    .join(", ");
+  const result = await db
+    .prepare(
+      `SELECT
+        reel_id,
+        auto_dm_message,
+        comment_keywords,
+        enabled
+      FROM reel_dm_config
+      WHERE reel_id IN (${placeholders})`
+    )
+    .bind(...normalizedIds)
+    .all();
+  const configs = new Map();
+
+  for (const row of result.results ?? []) {
+    configs.set(row.reel_id, {
+      reelId: row.reel_id,
+      autoDmMessage: row.auto_dm_message ?? "",
+      commentKeywords: row.comment_keywords ?? "",
+      enabled: row.enabled === 1 ? 1 : 0
+    });
+  }
+
+  return configs;
+}
+
 export async function upsertReelConfig(
   db,
   {

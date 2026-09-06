@@ -4,12 +4,12 @@ Instagram 릴스 댓글에 설정된 키워드가 포함되면 자동 DM을 보�
 
 ## 현재 상태
 
-`worker.js`는 최초 Cloudflare 운영 소스의 보관본이고, Wrangler 진입점은 `src/index.js`다. 현재 Worker 흐름은 환경변수 기반 키워드 매칭과 Private Reply 발송을 유지한다. D1 저장 모듈과 Instagram 릴스 조회 모듈은 추가했지만 아직 Webhook·관리자 페이지에 연결하지 않았다.
+`worker.js`는 최초 Cloudflare 운영 소스의 보관본이고, Wrangler 진입점은 `src/index.js`다. 현재 로컬 코드는 D1 기반 릴스별 자동 DM, 팔로우 확인, 관리자 로그인·API·웹 화면까지 연결했다. 실제 Meta 응답과 브라우저 통합 검증 전이므로 아직 운영에 push하지 않았다.
 
 - Worker 이름: `instagram-dm-auto-reply`
 - 기존 URL: https://instagram-dm-auto-reply.kongkong2820.workers.dev
 - GitHub: https://github.com/kongkong2820/DM-Auto-Reply-IG
-- 현재 라우트: `GET /`, `GET /health`, `GET /privacy`, `GET /webhook`, `POST /webhook`
+- 현재 라우트: 공개·Webhook 라우트와 `GET /admin`, `/api/admin/*`
 - 목표 배포 흐름: 로컬 개발 → GitHub → Cloudflare Workers Builds → 기존 Worker
 
 ## 문서와 작업 순서
@@ -19,7 +19,7 @@ Instagram 릴스 댓글에 설정된 키워드가 포함되면 자동 DM을 보�
 - [TASK 문서](docs/tasks/): 작업별 진행 사항과 완료 조건
 - [RESULT 문서](docs/results/): TASK와 같은 번호의 구현·검증 결과
 
-TASK-01부터 TASK-04까지 완료했다. TASK-05에서는 기존 Private Reply 호출을 `src/instagram.js`로 분리하고 cursor 기반 릴스 목록 조회를 구현했다. 실제 Meta 응답 검증은 전체 기능 구현 후 통합 테스트에서 진행한다.
+TASK-01부터 TASK-04까지 완료했다. TASK-05부터 TASK-11까지 구현을 마쳤고 실제 기능 검증은 보류 중이다. 각 기능과 최종 확인 항목은 [개발 진행 현황](status.md)과 RESULT 문서에 기록한다.
 
 ## 현재 파일 구조
 
@@ -29,6 +29,9 @@ TASK-01부터 TASK-04까지 완료했다. TASK-05에서는 기존 Private Reply 
 ├── src/index.js                      # Wrangler Worker 진입점
 ├── src/db.js                         # D1 설정 저장 모듈
 ├── src/instagram.js                  # Instagram API 호출 모듈
+├── src/webhook.js                    # Webhook 검증과 D1 기반 발송 흐름
+├── src/auth.js                       # 관리자 서명 세션
+├── src/admin.js                      # 관리자 API와 HTML 화면
 ├── test/worker.test.js               # 현재 동작 회귀 테스트
 ├── package.json
 ├── package-lock.json
@@ -45,7 +48,7 @@ TASK-01부터 TASK-04까지 완료했다. TASK-05에서는 기존 Private Reply 
 └── README.md
 ```
 
-`wrangler.jsonc`의 `DB` 바인딩은 Cloudflare D1 `instagram-dm-db`를 가리킨다. `src/db.js`는 구현됐지만 Worker 진입점은 아직 D1을 읽지 않는다.
+`wrangler.jsonc`의 `DB` 바인딩은 Cloudflare D1 `instagram-dm-db`를 가리킨다. Webhook과 관리자 API가 이 바인딩에서 릴스별 설정과 공통 키워드를 읽고 저장한다.
 
 ## 로컬 실행과 검증
 
@@ -82,9 +85,9 @@ npm run db:migrate:remote
 | 구분 | 이름 | 관리 방침 |
 | --- | --- | --- |
 | Secret | INSTAGRAM_ACCESS_TOKEN, META_APP_SECRET, VERIFY_TOKEN | Cloudflare Secret으로 유지 |
-| 추가 예정 Secret | ADMIN_PASSWORD | 관리자 인증 구현 시 등록 |
+| 추가 필요 Secret | ADMIN_PASSWORD | 첫 통합 배포 전에 Cloudflare에 등록 |
 | 유지 변수 | ENABLE_AUTO_REPLY, GRAPH_API_VERSION, INSTAGRAM_ACCOUNT_ID | 현재 운영 설정 확인 후 유지 |
-| 전환 후 제거 변수 | PRIVATE_REPLY_MESSAGE, COMMENT_KEYWORDS, KEYWORD_MATCH_MODE | D1 기반 기능 검증 후 제거 |
+| 제거 대기 변수 | PRIVATE_REPLY_MESSAGE, COMMENT_KEYWORDS, KEYWORD_MATCH_MODE | 코드 의존 제거 완료, 운영 통합 검증 후 Cloudflare에서 제거 |
 | 바인딩 | DB | Cloudflare D1 `instagram-dm-db` |
 
 실제 토큰·Secret·비밀번호를 코드나 문서에 넣지 않는다. 예제 환경 파일을 추가할 때에는 변수명과 빈 값만 기록한다. 현재 동작하는 META_APP_SECRET의 출처를 임의 변경하지 않는다. 설계 문서에 기록된 과거 노출 토큰은 운영 전 교체한다.
@@ -103,3 +106,14 @@ GitHub `main`과 Cloudflare Workers Builds가 연결되어 있어 push 시 운�
 - 팔로워임을 확인한 경우에만 발송한다. 조회 실패도 미발송이다. 실제 API 검증이 선행되어야 한다.
 - 같은 사용자의 새 댓글은 다시 처리할 수 있으며 사용자별 1회 제한을 추가하지 않는다.
 - 관리자 목록은 최신순, 제목은 caption 첫 줄, 페이지 크기는 20/50/100으로 제공한다.
+
+## 통합 테스트 전 준비
+
+1. Cloudflare에 `ADMIN_PASSWORD` Secret을 등록한다.
+2. 배포 후 `/health`에서 D1과 Instagram 설정 여부만 확인한다.
+3. `/admin` 로그인과 릴스·공통 설정 저장을 확인한다.
+4. 팔로워, 비팔로워, 기존 DM 상호작용 없는 계정으로 팔로우 판정을 확인한다.
+5. 서로 다른 릴스에 다른 메시지를 저장하고 실제 댓글 → DM을 확인한다.
+6. 모든 검증 성공 후 기존 Runtime Variable 3개를 제거한다.
+
+세부 시나리오와 기대 결과는 `docs/results/RESULT-05.md`부터 `RESULT-11.md`에 나뉘어 있다.

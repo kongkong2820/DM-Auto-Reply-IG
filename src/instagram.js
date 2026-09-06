@@ -128,6 +128,50 @@ export async function sendPrivateReply(
   }
 }
 
+export async function checkFollowStatus(
+  commenterId,
+  env
+) {
+  try {
+    const version = requireGraphApiVersion(
+      env.GRAPH_API_VERSION
+    );
+    const accessToken = requireAccessToken(
+      env.INSTAGRAM_ACCESS_TOKEN
+    );
+
+    if (
+      typeof commenterId !== "string" ||
+      !commenterId.trim()
+    ) {
+      return false;
+    }
+
+    const endpoint = new URL(
+      `${GRAPH_API_ORIGIN}/${version}/` +
+      `${encodeURIComponent(commenterId.trim())}`
+    );
+    endpoint.searchParams.set(
+      "fields",
+      "is_user_follow_business"
+    );
+
+    const response = await fetch(endpoint, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      }
+    });
+    const payload = await readJsonResponse(response);
+
+    return payload.is_user_follow_business === true;
+  } catch {
+    console.warn(
+      "Instagram follow status could not be verified"
+    );
+    return false;
+  }
+}
+
 function requireGraphApiVersion(value) {
   if (!/^v\d+\.\d+$/.test(value)) {
     throw new Error(

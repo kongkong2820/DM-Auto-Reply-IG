@@ -4,9 +4,9 @@
 
 ## 현재 상태
 
-TASK-01부터 TASK-04까지 완료했다. TASK-05는 Instagram API 모듈 분리와 릴스 목록 조회 구현을 마쳤고 실제 응답 검증은 전체 기능 구현 후 통합 테스트로 보류했다. DB 모듈은 아직 Worker 진입점에 연결하지 않아 운영 자동 DM 흐름은 기존 환경변수 방식을 유지한다.
+TASK-01부터 TASK-04까지 완료했다. TASK-05부터 TASK-11까지 코드 구현을 마쳤으며 실제 Meta 응답, 브라우저, Webhook과 DM 통합 검증은 한 번에 수행하도록 보류했다. Webhook 코드는 D1 설정 기반으로 전환했고 관리자 로그인·API·화면과 새 health 응답을 연결했다. 아직 GitHub에 push하거나 운영 Worker에 배포하지 않았다.
 
-설계 문서에는 실제 댓글 → DM 성공 이력이 있다. 이번 작업에서 운영 환경을 재검증한 것은 아니다. 현재 코드는 환경변수 기반이며 D1·관리자 인증/UI·팔로우 확인이 없다. 기존 키워드 파서는 쉼표와 줄바꿈을 허용하며 contains 모드가 아니면 정확히 일치해야 한다. TASK-01에서는 이를 보존하고 TASK-07에서 새 정책으로 전환한다.
+현재 구현은 D1의 릴스별 설정과 공통 키워드를 사용하고 쉼표 구분 contains 규칙을 적용한다. 팔로우 판정은 `is_user_follow_business === true`일 때만 발송하는 Fail Closed 방식이다. 이 필드의 실제 권한과 신규 사용자 consent 동작은 아직 검증하지 않았으므로 현재 변경을 운영에 배포해서는 안 된다.
 
 ## 진행 순서
 
@@ -17,19 +17,21 @@ TASK-01부터 TASK-04까지 완료했다. TASK-05는 Instagram API 모듈 분리
 | 03 | [D1 생성과 초기 마이그레이션](docs/tasks/TASK-03.md) | TASK-02 | 완료 | [RESULT-03](docs/results/RESULT-03.md) |
 | 04 | [D1 설정 저장 모듈](docs/tasks/TASK-04.md) | TASK-03 | 완료 | [RESULT-04](docs/results/RESULT-04.md) |
 | 05 | [Instagram API 분리와 릴스 응답 검증](docs/tasks/TASK-05.md) | TASK-04 | 진행 중 | [RESULT-05](docs/results/RESULT-05.md) |
-| 06 | [팔로우 조회 실제 검증과 구현](docs/tasks/TASK-06.md) | TASK-05 | 대기 | [RESULT-06](docs/results/RESULT-06.md) |
-| 07 | [Webhook을 D1 기반 발송으로 전환](docs/tasks/TASK-07.md) | TASK-04, TASK-06 | 대기 | [RESULT-07](docs/results/RESULT-07.md) |
-| 08 | [관리자 로그인과 세션 보호](docs/tasks/TASK-08.md) | TASK-07 | 대기 | [RESULT-08](docs/results/RESULT-08.md) |
-| 09 | [관리자 릴스·공통 설정 API](docs/tasks/TASK-09.md) | TASK-04, TASK-05, TASK-08 | 대기 | [RESULT-09](docs/results/RESULT-09.md) |
-| 10 | [관리자 웹 화면](docs/tasks/TASK-10.md) | TASK-09 | 대기 | [RESULT-10](docs/results/RESULT-10.md) |
-| 11 | [통합 검증과 기존 환경변수 정리](docs/tasks/TASK-11.md) | TASK-10 | 대기 | [RESULT-11](docs/results/RESULT-11.md) |
+| 06 | [팔로우 조회 실제 검증과 구현](docs/tasks/TASK-06.md) | TASK-05 | 진행 중 | [RESULT-06](docs/results/RESULT-06.md) |
+| 07 | [Webhook을 D1 기반 발송으로 전환](docs/tasks/TASK-07.md) | TASK-04, TASK-06 | 진행 중 | [RESULT-07](docs/results/RESULT-07.md) |
+| 08 | [관리자 로그인과 세션 보호](docs/tasks/TASK-08.md) | TASK-07 | 진행 중 | [RESULT-08](docs/results/RESULT-08.md) |
+| 09 | [관리자 릴스·공통 설정 API](docs/tasks/TASK-09.md) | TASK-04, TASK-05, TASK-08 | 진행 중 | [RESULT-09](docs/results/RESULT-09.md) |
+| 10 | [관리자 웹 화면](docs/tasks/TASK-10.md) | TASK-09 | 진행 중 | [RESULT-10](docs/results/RESULT-10.md) |
+| 11 | [통합 검증과 기존 환경변수 정리](docs/tasks/TASK-11.md) | TASK-10 | 진행 중 | [RESULT-11](docs/results/RESULT-11.md) |
 | 12 | [운영 토큰 교체와 최종 인수인계](docs/tasks/TASK-12.md) | TASK-11 | 대기 | [RESULT-12](docs/results/RESULT-12.md) |
 
 ## 다음 진행 사항
 
-1. TASK-06에서 팔로우 상태 조회 모듈을 구현한다.
-2. TASK-07부터 관리자 기능까지 순서대로 구현한다.
-3. 전체 구현 후 실제 미디어 응답, cursor, 팔로우 판정, 댓글 → DM을 한 번에 기능 테스트한다.
+1. 변경 전체를 검토한 뒤 `ADMIN_PASSWORD` Secret을 준비한다.
+2. 한 번의 배포에서 관리자 로그인, 릴스 목록·cursor, D1 저장을 먼저 확인한다.
+3. 팔로워·비팔로워·신규 계정의 판정과 실제 댓글 → 릴스별 DM을 확인한다.
+4. 성공 후 운영 Runtime Variable 3개를 제거하고 TASK-05부터 TASK-11을 완료 처리한다.
+5. TASK-12에서 운영 토큰 교체와 최종 인수인계를 진행한다.
 
 ## 검증이 필요한 결정
 
@@ -37,7 +39,7 @@ TASK-01부터 TASK-04까지 완료했다. TASK-05는 Instagram API 모듈 분리
 - 팔로우 조회는 팔로워·비팔로워·DM 상호작용 없는 신규 계정으로 실테스트한다. 실패하면 발송하지 않는다.
 - 로그인 API는 세션 발급 진입점이므로 사전 세션 없이 비밀번호를 검증하며, 나머지 관리자 API는 세션으로 보호한다.
 - 신규 릴스는 기본 OFF이므로 D1 전환 전 발송할 릴스의 설정을 준비한다.
-- 기존 환경변수는 D1 기반 통합 검증 이후 제거한다. 노출된 토큰 교체는 운영 전 필수이며 보안상 필요하면 앞당긴다.
+- 운영의 `PRIVATE_REPLY_MESSAGE`, `COMMENT_KEYWORDS`, `KEYWORD_MATCH_MODE`는 D1 기반 통합 검증 이후 제거한다. 노출된 토큰 교체는 운영 전 필수이며 보안상 필요하면 앞당긴다.
 
 ## 상태 기록 규칙
 
