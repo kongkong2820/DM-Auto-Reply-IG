@@ -46,6 +46,10 @@ Worker 코드와 `.dev.vars.example`에서 `PRIVATE_REPLY_MESSAGE`, Runtime `COM
 
 자동 테스트는 사용자 요청에 따라 수행하지 않는다. 운영 변수 삭제는 새 흐름의 실제 기능 확인 뒤 진행한다.
 
+운영 D1에 `0002_follow_confirmation_flow.sql`을 적용했고, 커밋
+`4dd708a`가 Cloudflare 배포 버전
+`e269387d-ecd8-4177-bb89-1df1514c9642`로 반영됐다.
+
 ## 남은 문제와 후속 작업
 
 - 배포 전 `ADMIN_PASSWORD` Cloudflare Secret을 등록해야 한다.
