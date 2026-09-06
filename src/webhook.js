@@ -1,10 +1,15 @@
 import { getAppSetting, getReelConfig } from "./db.js";
 import {
   checkFollowStatus,
-  sendPrivateReply
+  sendPrivateReplyWithQuickReply,
+  sendQuickReply,
+  sendTextMessage
 } from "./instagram.js";
 
 const encoder = new TextEncoder();
+const FOLLOW_PAYLOAD_PREFIX = "FOLLOW_CHECK:";
+const INITIAL_BUTTON_TITLE = "팔로우 확인 🙌🏻";
+const RETRY_BUTTON_TITLE = "팔로우 완료했어요 🙌🏻";
 
 export async function handleWebhook(request, url, env, ctx) {
   if (request.method === "GET") {
@@ -48,22 +53,34 @@ export async function handleWebhook(request, url, env, ctx) {
   });
 
   if (env.ENABLE_AUTO_REPLY === "true") {
-    ctx.waitUntil(processCommentPayload(payload, env));
+    ctx.waitUntil(processPayload(payload, env));
   }
 
   return new Response("EVENT_RECEIVED", { status: 200 });
 }
 
-async function processCommentPayload(payload, env) {
-  const events = extractCommentEvents(payload);
+async function processPayload(payload, env) {
+  const commentEvents = extractCommentEvents(payload);
+  const quickReplyEvents = extractQuickReplyEvents(payload);
 
   await Promise.all(
-    events.map(async (event) => {
+    commentEvents.map(async (event) => {
       try {
         const outcome = await processCommentEvent(event, env);
         console.log("Instagram comment processed", { outcome });
       } catch {
         console.error("Instagram comment processing failed");
+      }
+    })
+  );
+
+  await Promise.all(
+    quickReplyEvents.map(async (event) => {
+      try {
+        const outcome = await processQuickReplyEvent(event, env);
+        console.log("Instagram quick reply processed", { outcome });
+      } catch {
+        console.error("Instagram quick reply processing failed");
       }
     })
   );
@@ -101,12 +118,60 @@ async function processCommentEvent(event, env) {
     return "keyword_not_matched";
   }
 
-  if (!await checkFollowStatus(event.commenterId, env)) {
-    return "follow_not_verified";
+  const followPromptMessage = config.followPromptMessage.trim();
+
+  if (!followPromptMessage) {
+    return "follow_prompt_empty";
   }
 
-  await sendPrivateReply(event.commentId, message, env);
-  return "reply_sent";
+  await sendPrivateReplyWithQuickReply(
+    event.commentId,
+    followPromptMessage,
+    followQuickReply(INITIAL_BUTTON_TITLE, event.mediaId),
+    env
+  );
+  return "follow_prompt_sent";
+}
+
+async function processQuickReplyEvent(event, env) {
+  if (
+    !event.senderId ||
+    event.senderId === env.INSTAGRAM_ACCOUNT_ID ||
+    !event.reelId
+  ) {
+    return "invalid_or_own_quick_reply";
+  }
+
+  const config = await getReelConfig(env.DB, event.reelId);
+
+  if (config?.enabled !== 1) {
+    return "config_missing_or_disabled";
+  }
+
+  const message = config.autoDmMessage.trim();
+
+  if (!message) {
+    return "message_empty";
+  }
+
+  if (await checkFollowStatus(event.senderId, env)) {
+    await sendTextMessage(event.senderId, message, env);
+    return "final_reply_sent";
+  }
+
+  const retryMessage = config.followRetryMessage.trim();
+
+  if (!retryMessage) {
+    return "follow_retry_empty";
+  }
+
+  await sendQuickReply(
+    event.senderId,
+    retryMessage,
+    followQuickReply(RETRY_BUTTON_TITLE, event.reelId),
+    env
+  );
+  return "follow_retry_sent";
 }
 
 function extractCommentEvents(payload) {
@@ -150,6 +215,51 @@ function extractCommentEvents(payload) {
   }
 
   return events;
+}
+
+function extractQuickReplyEvents(payload) {
+  const events = [];
+
+  for (const entry of payload.entry ?? []) {
+    for (const messagingEvent of entry.messaging ?? []) {
+      const payloadValue =
+        messagingEvent.message?.quick_reply?.payload ??
+        messagingEvent.postback?.payload;
+      const reelId = parseFollowPayload(payloadValue);
+
+      if (!reelId) {
+        continue;
+      }
+
+      events.push({
+        senderId: messagingEvent.sender?.id
+          ? String(messagingEvent.sender.id)
+          : null,
+        reelId
+      });
+    }
+  }
+
+  return events;
+}
+
+function followQuickReply(title, reelId) {
+  return {
+    title,
+    payload: `${FOLLOW_PAYLOAD_PREFIX}${reelId}`
+  };
+}
+
+function parseFollowPayload(value) {
+  if (
+    typeof value !== "string" ||
+    !value.startsWith(FOLLOW_PAYLOAD_PREFIX)
+  ) {
+    return null;
+  }
+
+  const reelId = value.slice(FOLLOW_PAYLOAD_PREFIX.length);
+  return /^\d{1,64}$/.test(reelId) ? reelId : null;
 }
 
 function matchesKeyword(comment, configuredKeywords) {

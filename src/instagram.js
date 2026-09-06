@@ -87,6 +87,56 @@ export async function sendPrivateReply(
   message,
   env
 ) {
+  return sendMessage(
+    { comment_id: commentId },
+    { text: message },
+    env
+  );
+}
+
+export async function sendPrivateReplyWithQuickReply(
+  commentId,
+  message,
+  quickReply,
+  env
+) {
+  return sendMessage(
+    { comment_id: commentId },
+    {
+      text: message,
+      quick_replies: [normalizeQuickReply(quickReply)]
+    },
+    env
+  );
+}
+
+export async function sendQuickReply(
+  recipientId,
+  message,
+  quickReply,
+  env
+) {
+  return sendMessage(
+    { id: requireRecipientId(recipientId) },
+    {
+      text: message,
+      quick_replies: [normalizeQuickReply(quickReply)]
+    },
+    env,
+    true
+  );
+}
+
+export async function sendTextMessage(recipientId, message, env) {
+  return sendMessage(
+    { id: requireRecipientId(recipientId) },
+    { text: message },
+    env,
+    true
+  );
+}
+
+async function sendMessage(recipient, message, env, isResponse = false) {
   const version = requireGraphApiVersion(env.GRAPH_API_VERSION);
   const accessToken = requireAccessToken(env.INSTAGRAM_ACCESS_TOKEN);
 
@@ -101,20 +151,19 @@ export async function sendPrivateReply(
     `${version}/` +
     `${env.INSTAGRAM_ACCOUNT_ID}/messages`;
 
+  const body = { recipient, message };
+
+  if (isResponse) {
+    body.messaging_type = "RESPONSE";
+  }
+
   const response = await fetch(endpoint, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${accessToken}`,
       "Content-Type": "application/json"
     },
-    body: JSON.stringify({
-      recipient: {
-        comment_id: commentId
-      },
-      message: {
-        text: message
-      }
-    })
+    body: JSON.stringify(body)
   });
 
   if (!response.ok) {
@@ -126,6 +175,33 @@ export async function sendPrivateReply(
       `${detail.slice(0, 500)}`
     );
   }
+}
+
+function normalizeQuickReply(quickReply) {
+  if (
+    !quickReply ||
+    typeof quickReply.title !== "string" ||
+    !quickReply.title.trim() ||
+    [...quickReply.title.trim()].length > 20 ||
+    typeof quickReply.payload !== "string" ||
+    !quickReply.payload.trim()
+  ) {
+    throw new TypeError("quickReply is invalid");
+  }
+
+  return {
+    content_type: "text",
+    title: quickReply.title.trim(),
+    payload: quickReply.payload.trim()
+  };
+}
+
+function requireRecipientId(value) {
+  if (typeof value !== "string" || !value.trim()) {
+    throw new TypeError("recipientId must be a non-empty string");
+  }
+
+  return value.trim();
 }
 
 export async function checkFollowStatus(

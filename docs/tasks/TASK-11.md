@@ -10,12 +10,15 @@
 
 - [ ] 설계 §43 완료 조건을 통합 검증하고 근거를 RESULT에 기록한다.
 - [x] /health를 D1·Instagram 설정 상태 기준으로 변경하며 Secret 값을 반환하지 않는다.
+- [x] 댓글 직후 빠른 답장으로 사용자 상호작용을 만든 뒤 팔로우를 확인하도록 변경한다.
+- [x] 릴스별 최초 팔로우 안내와 미팔로우 재확인 안내를 D1·관리자 화면에 추가한다.
+- [ ] Meta Webhook에서 `messages` 필드를 구독한다.
 - [ ] D1 기반 동작 확인 후 PRIVATE_REPLY_MESSAGE, Runtime COMMENT_KEYWORDS, KEYWORD_MATCH_MODE를 제거한다.
 
 ## 완료 조건 및 검증
 
-- [ ] 실제 댓글 → 릴스 설정 → 팔로워 확인 → 서로 다른 DM 발송을 검증한다.
-- [ ] 비팔로워·조회 실패·빈 메시지·OFF·fallback 및 contains 규칙을 재검증한다.
+- [ ] 실제 댓글 → 최초 버튼 → 팔로워 확인 → 서로 다른 최종 DM 발송을 검증한다.
+- [ ] 비팔로워·조회 실패 시 재확인 버튼, 빈 메시지·OFF·fallback 및 contains 규칙을 재검증한다.
 - [ ] 기존 Webhook·배포·관리자 기능을 유지하고 health마다 외부 API를 호출하지 않는다.
 
 ## 기록 원칙

@@ -1,4 +1,6 @@
 import {
+  DEFAULT_FOLLOW_PROMPT_MESSAGE,
+  DEFAULT_FOLLOW_RETRY_MESSAGE,
   getAppSetting,
   getReelConfigs,
   setAppSetting,
@@ -164,6 +166,10 @@ async function getReels(url, env) {
       timestamp: media.timestamp,
       enabled: config?.enabled ?? 0,
       autoDmMessage: config?.autoDmMessage ?? "",
+      followPromptMessage:
+        config?.followPromptMessage ?? DEFAULT_FOLLOW_PROMPT_MESSAGE,
+      followRetryMessage:
+        config?.followRetryMessage ?? DEFAULT_FOLLOW_RETRY_MESSAGE,
       commentKeywords: config?.commentKeywords ?? ""
     };
   });
@@ -190,6 +196,8 @@ async function saveReel(reelId, request, env) {
   if (
     ![true, false, 1, 0].includes(body.enabled) ||
     typeof body.autoDmMessage !== "string" ||
+    typeof body.followPromptMessage !== "string" ||
+    typeof body.followRetryMessage !== "string" ||
     typeof body.commentKeywords !== "string"
   ) {
     throw new HttpError(400, "릴스 설정 형식이 올바르지 않습니다.");
@@ -197,6 +205,13 @@ async function saveReel(reelId, request, env) {
 
   if (body.autoDmMessage.length > 10000) {
     throw new HttpError(400, "DM 메시지는 10,000자 이하여야 합니다.");
+  }
+
+  if (
+    body.followPromptMessage.length > 10000 ||
+    body.followRetryMessage.length > 10000
+  ) {
+    throw new HttpError(400, "팔로우 안내 문구는 10,000자 이하여야 합니다.");
   }
 
   if (body.commentKeywords.length > 2000) {
@@ -207,6 +222,8 @@ async function saveReel(reelId, request, env) {
     reelId,
     enabled: body.enabled,
     autoDmMessage: body.autoDmMessage,
+    followPromptMessage: body.followPromptMessage,
+    followRetryMessage: body.followRetryMessage,
     commentKeywords: body.commentKeywords
   });
 
@@ -374,14 +391,14 @@ const ADMIN_HTML = `<!doctype html>
     .size { display: flex; align-items: center; gap: 8px; color: var(--muted); }
     .size select { width: auto; }
     .table-wrap { overflow-x: auto; }
-    table { width: 100%; min-width: 1160px; border-collapse: collapse; }
+    table { width: 100%; min-width: 1820px; border-collapse: collapse; }
     th, td { border-bottom: 1px solid var(--line); padding: 13px 10px;
       text-align: left; vertical-align: top; }
     th { background: #f8fafc; color: var(--muted); font-size: 13px; }
     .toggle { width: 52px; height: 28px; accent-color: var(--brand); }
     .title { max-width: 250px; font-weight: 700; overflow-wrap: anywhere; }
     .date, .id { color: var(--muted); font-size: 13px; white-space: nowrap; }
-    .message { min-width: 300px; }
+    .message { min-width: 280px; }
     .keywords { min-width: 190px; }
     .row-status { min-height: 20px; margin-top: 6px; font-size: 12px; }
     .status { min-height: 24px; color: var(--muted); }
@@ -441,7 +458,8 @@ const ADMIN_HTML = `<!doctype html>
         <table>
           <thead><tr>
             <th>사용</th><th>제목</th><th>올린 날짜</th><th>릴스 ID</th>
-            <th>자동 DM 메시지</th><th>댓글 키워드</th><th>저장</th>
+            <th>최초 팔로우 확인 안내</th><th>미팔로우 재확인 안내</th>
+            <th>최종 자동 DM 메시지</th><th>댓글 키워드</th><th>저장</th>
           </tr></thead>
           <tbody id="reels"></tbody>
         </table>
@@ -579,10 +597,13 @@ const ADMIN_HTML = `<!doctype html>
         addTextCell(tr, formatDate(row.timestamp), "date");
         addTextCell(tr, row.reelId, "id");
 
-        var message = document.createElement("textarea");
-        message.className = "message";
-        message.maxLength = 10000;
-        message.value = row.autoDmMessage;
+        var followPrompt = messageInput(row.followPromptMessage);
+        addCell(tr, followPrompt);
+
+        var followRetry = messageInput(row.followRetryMessage);
+        addCell(tr, followRetry);
+
+        var message = messageInput(row.autoDmMessage);
         addCell(tr, message);
 
         var keywords = document.createElement("input");
@@ -607,11 +628,15 @@ const ADMIN_HTML = `<!doctype html>
               body: JSON.stringify({
                 enabled: enabled.checked,
                 autoDmMessage: message.value,
+                followPromptMessage: followPrompt.value,
+                followRetryMessage: followRetry.value,
                 commentKeywords: keywords.value
               })
             });
             enabled.checked = payload.data.enabled === 1;
             message.value = payload.data.autoDmMessage;
+            followPrompt.value = payload.data.followPromptMessage;
+            followRetry.value = payload.data.followRetryMessage;
             keywords.value = payload.data.commentKeywords;
             status.textContent = "저장됨";
             status.className = "row-status success";
@@ -628,6 +653,14 @@ const ADMIN_HTML = `<!doctype html>
         fragment.appendChild(tr);
       });
       tbody.replaceChildren(fragment);
+    }
+
+    function messageInput(value) {
+      var input = document.createElement("textarea");
+      input.className = "message";
+      input.maxLength = 10000;
+      input.value = value || "";
+      return input;
     }
 
     function addCell(row, child) {

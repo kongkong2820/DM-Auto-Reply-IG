@@ -1,10 +1,10 @@
 # Instagram Comment Auto DM
 
-Instagram 릴스 댓글에 설정된 키워드가 포함되면 자동 DM을 보내는 Cloudflare Worker 프로젝트다. 앞으로 릴스별 메시지·키워드·사용 여부를 D1과 관리자 웹에서 관리하고, 팔로워로 확인된 사용자에게만 발송하도록 확장한다.
+Instagram 릴스 댓글에 설정된 키워드가 포함되면 팔로우 확인 버튼을 보내고, 팔로워로 확인된 사용자에게 릴스별 자동 DM을 보내는 Cloudflare Worker 프로젝트다.
 
 ## 현재 상태
 
-`worker.js`는 최초 Cloudflare 운영 소스의 보관본이고, Wrangler 진입점은 `src/index.js`다. 현재 로컬 코드는 D1 기반 릴스별 자동 DM, 팔로우 확인, 관리자 로그인·API·웹 화면까지 연결했다. 실제 Meta 응답과 브라우저 통합 검증 전이므로 아직 운영에 push하지 않았다.
+`worker.js`는 최초 Cloudflare 운영 소스의 보관본이고, Wrangler 진입점은 `src/index.js`다. GitHub `main`과 Cloudflare Workers Builds가 연결되어 push하면 운영 Worker에 자동 배포된다.
 
 - Worker 이름: `instagram-dm-auto-reply`
 - 기존 URL: https://instagram-dm-auto-reply.kongkong2820.workers.dev
@@ -38,7 +38,8 @@ TASK-01부터 TASK-04까지 완료했다. TASK-05부터 TASK-11까지 구현을 
 ├── wrangler.jsonc
 ├── .dev.vars.example
 ├── migrations/
-│   └── 0001_init.sql                # D1 초기 스키마와 공통 키워드
+│   ├── 0001_init.sql                # D1 초기 스키마와 공통 키워드
+│   └── 0002_follow_confirmation_flow.sql # 팔로우 안내 문구 2종
 ├── instagram_dm_auto_reply_design.md # 설계
 ├── status.md                         # 개발 순서 및 현황
 ├── docs/
@@ -103,7 +104,9 @@ GitHub `main`과 Cloudflare Workers Builds가 연결되어 있어 push 시 운�
 - D1에는 릴스별 설정과 공통 설정만 저장하며 릴스 원본은 Instagram API에서 조회한다.
 - 메시지가 비었거나 OFF이면 발송하지 않는다. OFF 전환 시 메시지와 키워드는 보존한다.
 - 목표 키워드 규칙은 쉼표 구분·contains이며, 빈 릴스별 키워드는 D1 공통 키워드를 사용한다.
-- 팔로워임을 확인한 경우에만 발송한다. 조회 실패도 미발송이다. 실제 API 검증이 선행되어야 한다.
+- 팔로워임을 확인한 경우에만 최종 메시지를 발송한다. 비팔로워와 조회 실패에는 재확인 안내를 보낸다.
+- 댓글의 최초 Private Reply에는 팔로우 확인 빠른 답장을 넣고, 버튼 선택 후 팔로우를 조회한다.
+- 최초 팔로우 확인 안내와 미팔로우 재확인 안내는 릴스별로 관리한다.
 - 같은 사용자의 새 댓글은 다시 처리할 수 있으며 사용자별 1회 제한을 추가하지 않는다.
 - 관리자 목록은 최신순, 제목은 caption 첫 줄, 페이지 크기는 20/50/100으로 제공한다.
 
@@ -112,8 +115,9 @@ GitHub `main`과 Cloudflare Workers Builds가 연결되어 있어 push 시 운�
 1. Cloudflare에 `ADMIN_PASSWORD` Secret을 등록한다.
 2. 배포 후 `/health`에서 D1과 Instagram 설정 여부만 확인한다.
 3. `/admin` 로그인과 릴스·공통 설정 저장을 확인한다.
-4. 팔로워, 비팔로워, 기존 DM 상호작용 없는 계정으로 팔로우 판정을 확인한다.
-5. 서로 다른 릴스에 다른 메시지를 저장하고 실제 댓글 → DM을 확인한다.
-6. 모든 검증 성공 후 기존 Runtime Variable 3개를 제거한다.
+4. Meta Webhook에서 `messages` 필드를 구독한다.
+5. 팔로워·비팔로워 계정으로 댓글 → 확인 버튼 → 최종/재확인 메시지를 확인한다.
+6. 서로 다른 릴스에 다른 메시지를 저장하고 실제 댓글 → DM을 확인한다.
+7. 모든 검증 성공 후 기존 Runtime Variable 3개를 제거한다.
 
 세부 시나리오와 기대 결과는 `docs/results/RESULT-05.md`부터 `RESULT-11.md`에 나뉘어 있다.
