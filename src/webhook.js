@@ -43,6 +43,10 @@ export async function handleWebhook(request, url, env, ctx) {
     return new Response("Ignored", { status: 200 });
   }
 
+  console.log("Instagram webhook accepted", {
+    autoReplyEnabled: env.ENABLE_AUTO_REPLY === "true"
+  });
+
   if (env.ENABLE_AUTO_REPLY === "true") {
     ctx.waitUntil(processCommentPayload(payload, env));
   }
@@ -56,7 +60,8 @@ async function processCommentPayload(payload, env) {
   await Promise.all(
     events.map(async (event) => {
       try {
-        await processCommentEvent(event, env);
+        const outcome = await processCommentEvent(event, env);
+        console.log("Instagram comment processed", { outcome });
       } catch {
         console.error("Instagram comment processing failed");
       }
@@ -67,22 +72,25 @@ async function processCommentPayload(payload, env) {
 async function processCommentEvent(event, env) {
   if (
     !event.mediaId ||
-    !event.commenterId ||
-    event.commenterId === env.INSTAGRAM_ACCOUNT_ID
+    !event.commenterId
   ) {
-    return;
+    return "missing_context";
+  }
+
+  if (event.commenterId === env.INSTAGRAM_ACCOUNT_ID) {
+    return "own_account_ignored";
   }
 
   const config = await getReelConfig(env.DB, event.mediaId);
 
   if (config?.enabled !== 1) {
-    return;
+    return "config_missing_or_disabled";
   }
 
   const message = config.autoDmMessage.trim();
 
   if (!message) {
-    return;
+    return "message_empty";
   }
 
   const configuredKeywords = config.commentKeywords.trim()
@@ -90,14 +98,15 @@ async function processCommentEvent(event, env) {
     : await getAppSetting(env.DB, "COMMENT_KEYWORDS");
 
   if (!matchesKeyword(event.text, configuredKeywords)) {
-    return;
+    return "keyword_not_matched";
   }
 
   if (!await checkFollowStatus(event.commenterId, env)) {
-    return;
+    return "follow_not_verified";
   }
 
   await sendPrivateReply(event.commentId, message, env);
+  return "reply_sent";
 }
 
 function extractCommentEvents(payload) {
