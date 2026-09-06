@@ -4,7 +4,7 @@
 
 ## 현재 상태
 
-TASK-01부터 TASK-03까지 완료했다. GitHub `main`과 Cloudflare Workers Builds 연결, 실제 댓글 → DM 재검증, APAC D1 `instagram-dm-db` 생성과 초기 migration을 마쳤다. 기존 9개 바인딩을 보존한 채 `DB` 바인딩이 운영 Worker에 배포됐고 `/health`도 정상이다.
+TASK-01부터 TASK-04까지 완료했다. GitHub 자동 배포, 실제 댓글 → DM 재검증, D1 생성·migration·운영 바인딩과 D1 설정 저장 모듈 구현을 마쳤다. DB 모듈은 아직 Worker 진입점에 연결하지 않아 운영 자동 DM 흐름은 기존 환경변수 방식을 유지한다.
 
 설계 문서에는 실제 댓글 → DM 성공 이력이 있다. 이번 작업에서 운영 환경을 재검증한 것은 아니다. 현재 코드는 환경변수 기반이며 D1·관리자 인증/UI·팔로우 확인이 없다. 기존 키워드 파서는 쉼표와 줄바꿈을 허용하며 contains 모드가 아니면 정확히 일치해야 한다. TASK-01에서는 이를 보존하고 TASK-07에서 새 정책으로 전환한다.
 
@@ -15,7 +15,7 @@ TASK-01부터 TASK-03까지 완료했다. GitHub `main`과 Cloudflare Workers Bu
 | 01 | [로컬 Worker 프로젝트화](docs/tasks/TASK-01.md) | 없음 | 완료 | [RESULT-01](docs/results/RESULT-01.md) |
 | 02 | [GitHub 및 기존 Worker 배포 연결](docs/tasks/TASK-02.md) | TASK-01 | 완료 | [RESULT-02](docs/results/RESULT-02.md) |
 | 03 | [D1 생성과 초기 마이그레이션](docs/tasks/TASK-03.md) | TASK-02 | 완료 | [RESULT-03](docs/results/RESULT-03.md) |
-| 04 | [D1 설정 저장 모듈](docs/tasks/TASK-04.md) | TASK-03 | 대기 | [RESULT-04](docs/results/RESULT-04.md) |
+| 04 | [D1 설정 저장 모듈](docs/tasks/TASK-04.md) | TASK-03 | 완료 | [RESULT-04](docs/results/RESULT-04.md) |
 | 05 | [Instagram API 분리와 릴스 응답 검증](docs/tasks/TASK-05.md) | TASK-04 | 대기 | [RESULT-05](docs/results/RESULT-05.md) |
 | 06 | [팔로우 조회 실제 검증과 구현](docs/tasks/TASK-06.md) | TASK-05 | 대기 | [RESULT-06](docs/results/RESULT-06.md) |
 | 07 | [Webhook을 D1 기반 발송으로 전환](docs/tasks/TASK-07.md) | TASK-04, TASK-06 | 대기 | [RESULT-07](docs/results/RESULT-07.md) |
@@ -27,9 +27,9 @@ TASK-01부터 TASK-03까지 완료했다. GitHub `main`과 Cloudflare Workers Bu
 
 ## 다음 진행 사항
 
-1. TASK-04에서 D1 조회·UPSERT 설정 모듈을 구현한다.
-2. SQL 파라미터 바인딩, 설정 없음, 빈 메시지 자동 OFF와 OFF 시 값 보존을 테스트한다.
-3. DB 모듈만 추가하고 Webhook 실행 경로 전환은 TASK-07까지 보류한다.
+1. TASK-05에서 기존 Private Reply 호출을 Instagram API 모듈로 분리한다.
+2. 실제 미디어 응답을 기준으로 릴스 판별 필드와 cursor 구조를 확인한다.
+3. 사용자의 요청에 따라 테스트 실행은 사용자가 담당하고 Codex는 구현과 결과 문서만 정리한다.
 
 ## 검증이 필요한 결정
 

@@ -19,7 +19,7 @@ Instagram 릴스 댓글에 설정된 키워드가 포함되면 자동 DM을 보�
 - [TASK 문서](docs/tasks/): 작업별 진행 사항과 완료 조건
 - [RESULT 문서](docs/results/): TASK와 같은 번호의 구현·검증 결과
 
-TASK-01부터 TASK-03까지 완료했다. GitHub `main`에서 기존 Worker로 이어지는 Cloudflare Workers Builds 자동 배포와 실제 댓글 → DM을 확인했다. D1 `instagram-dm-db`에는 릴스별 설정 테이블과 공통 설정 테이블이 준비됐으며 상세 내용은 [RESULT-03](docs/results/RESULT-03.md)에 기록한다.
+TASK-01부터 TASK-04까지 완료했다. GitHub 자동 배포와 D1 초기 구성을 마쳤고 `src/db.js`에 릴스별 설정 및 공통 설정 저장 모듈을 구현했다. 상세 내용은 [RESULT-04](docs/results/RESULT-04.md)에 기록한다.
 
 ## 현재 파일 구조
 
