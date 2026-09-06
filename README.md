@@ -4,7 +4,7 @@ Instagram 릴스 댓글에 설정된 키워드가 포함되면 자동 DM을 보�
 
 ## 현재 상태
 
-`worker.js`는 현재 Cloudflare에 올라가 있는 운영 기준 원본이고, 같은 실행 코드를 `src/index.js`에서 사용한다. 현재 구현은 환경변수 기반 키워드 매칭과 Private Reply 발송이며, D1·관리자 페이지·팔로우 확인은 아직 구현되지 않았다. 설계 문서에 기존 실제 DM 수신 성공 이력이 기록되어 있다.
+`worker.js`는 최초 Cloudflare 운영 소스의 보관본이고, Wrangler 진입점은 `src/index.js`다. 현재 Worker 흐름은 환경변수 기반 키워드 매칭과 Private Reply 발송을 유지한다. D1 저장 모듈과 Instagram 릴스 조회 모듈은 추가했지만 아직 Webhook·관리자 페이지에 연결하지 않았다.
 
 - Worker 이름: `instagram-dm-auto-reply`
 - 기존 URL: https://instagram-dm-auto-reply.kongkong2820.workers.dev
@@ -19,7 +19,7 @@ Instagram 릴스 댓글에 설정된 키워드가 포함되면 자동 DM을 보�
 - [TASK 문서](docs/tasks/): 작업별 진행 사항과 완료 조건
 - [RESULT 문서](docs/results/): TASK와 같은 번호의 구현·검증 결과
 
-TASK-01부터 TASK-04까지 완료했다. GitHub 자동 배포와 D1 초기 구성을 마쳤고 `src/db.js`에 릴스별 설정 및 공통 설정 저장 모듈을 구현했다. 상세 내용은 [RESULT-04](docs/results/RESULT-04.md)에 기록한다.
+TASK-01부터 TASK-04까지 완료했다. TASK-05에서는 기존 Private Reply 호출을 `src/instagram.js`로 분리하고 cursor 기반 릴스 목록 조회를 구현했다. 실제 Meta 응답 검증은 전체 기능 구현 후 통합 테스트에서 진행한다.
 
 ## 현재 파일 구조
 
@@ -27,6 +27,8 @@ TASK-01부터 TASK-04까지 완료했다. GitHub 자동 배포와 D1 초기 구�
 .
 ├── worker.js                         # 운영 기준 원본
 ├── src/index.js                      # Wrangler Worker 진입점
+├── src/db.js                         # D1 설정 저장 모듈
+├── src/instagram.js                  # Instagram API 호출 모듈
 ├── test/worker.test.js               # 현재 동작 회귀 테스트
 ├── package.json
 ├── package-lock.json
@@ -43,7 +45,7 @@ TASK-01부터 TASK-04까지 완료했다. GitHub 자동 배포와 D1 초기 구�
 └── README.md
 ```
 
-`wrangler.jsonc`의 `DB` 바인딩은 Cloudflare D1 `instagram-dm-db`를 가리킨다. Worker 코드는 아직 D1을 읽지 않으며 TASK-04에서 DB 모듈을 추가한다.
+`wrangler.jsonc`의 `DB` 바인딩은 Cloudflare D1 `instagram-dm-db`를 가리킨다. `src/db.js`는 구현됐지만 Worker 진입점은 아직 D1을 읽지 않는다.
 
 ## 로컬 실행과 검증
 
@@ -83,7 +85,7 @@ npm run db:migrate:remote
 | 추가 예정 Secret | ADMIN_PASSWORD | 관리자 인증 구현 시 등록 |
 | 유지 변수 | ENABLE_AUTO_REPLY, GRAPH_API_VERSION, INSTAGRAM_ACCOUNT_ID | 현재 운영 설정 확인 후 유지 |
 | 전환 후 제거 변수 | PRIVATE_REPLY_MESSAGE, COMMENT_KEYWORDS, KEYWORD_MATCH_MODE | D1 기반 기능 검증 후 제거 |
-| 추가 예정 바인딩 | DB | Cloudflare D1 |
+| 바인딩 | DB | Cloudflare D1 `instagram-dm-db` |
 
 실제 토큰·Secret·비밀번호를 코드나 문서에 넣지 않는다. 예제 환경 파일을 추가할 때에는 변수명과 빈 값만 기록한다. 현재 동작하는 META_APP_SECRET의 출처를 임의 변경하지 않는다. 설계 문서에 기록된 과거 노출 토큰은 운영 전 교체한다.
 
@@ -91,7 +93,7 @@ npm run db:migrate:remote
 
 `.gitignore`에는 `정보` 파일의 한글 완성형·분해형 이름, `.env*`, `.dev.vars*`, 의존성, Wrangler 로컬 상태, 빌드 결과, 로그, 로컬 DB 등을 제외하도록 설정했다. 마이그레이션 SQL과 패키지 잠금 파일은 추적 대상으로 유지한다.
 
-현재 Git 초기화·커밋·GitHub 업로드·자동 배포 연결은 수행하지 않았다. 첫 커밋 전 제외 규칙과 staged diff를 확인한다. `.gitignore`는 이미 추적된 파일이나 과거 커밋의 Secret을 제거하지 않는다.
+GitHub `main`과 Cloudflare Workers Builds가 연결되어 있어 push 시 운영 Worker가 자동 배포된다. 전체 기능 구현 중에는 중간 배포를 피하고, 통합할 변경을 확인한 뒤 push한다. `.gitignore`는 이미 추적된 파일이나 과거 커밋의 Secret을 제거하지 않는다.
 
 ## 핵심 정책
 

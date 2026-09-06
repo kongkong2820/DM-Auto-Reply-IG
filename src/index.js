@@ -1,3 +1,5 @@
+import { sendPrivateReply } from "./instagram.js";
+
 var encoder = new TextEncoder();
 
 var index_default = {
@@ -220,63 +222,6 @@ function normalize(value) {
   return value
     .trim()
     .toLocaleLowerCase("ko-KR");
-}
-
-async function sendPrivateReply(
-  commentId,
-  message,
-  env
-) {
-  if (
-    !/^v\d+\.\d+$/.test(
-      env.GRAPH_API_VERSION
-    )
-  ) {
-    throw new Error(
-      "GRAPH_API_VERSION is not configured"
-    );
-  }
-
-  if (
-    !env.INSTAGRAM_ACCOUNT_ID ||
-    !env.INSTAGRAM_ACCESS_TOKEN
-  ) {
-    throw new Error(
-      "Instagram account credentials are not configured"
-    );
-  }
-
-  const endpoint =
-    `https://graph.instagram.com/` +
-    `${env.GRAPH_API_VERSION}/` +
-    `${env.INSTAGRAM_ACCOUNT_ID}/messages`;
-
-  const response = await fetch(endpoint, {
-    method: "POST",
-    headers: {
-      Authorization:
-        `Bearer ${env.INSTAGRAM_ACCESS_TOKEN}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      recipient: {
-        comment_id: commentId
-      },
-      message: {
-        text: message
-      }
-    })
-  });
-
-  if (!response.ok) {
-    const detail = await response.text();
-
-    throw new Error(
-      `Instagram API error ` +
-      `${response.status}: ` +
-      `${detail.slice(0, 500)}`
-    );
-  }
 }
 
 async function isValidSignature(
