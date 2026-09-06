@@ -164,9 +164,15 @@ export async function checkFollowStatus(
     const payload = await readJsonResponse(response);
 
     return payload.is_user_follow_business === true;
-  } catch {
+  } catch (error) {
     console.warn(
-      "Instagram follow status could not be verified"
+      "Instagram follow status could not be verified",
+      {
+        status: error?.status ?? null,
+        code: error?.apiCode ?? null,
+        subcode: error?.apiSubcode ?? null,
+        type: error?.apiType ?? null
+      }
     );
     return false;
   }
@@ -235,10 +241,15 @@ async function readJsonResponse(response) {
         ? ` (code ${code})`
         : "";
 
-    throw new Error(
+    const error = new Error(
       `Instagram API error ${response.status}: ` +
       `${message.slice(0, 300)}${codeSuffix}`
     );
+    error.status = response.status;
+    error.apiCode = code ?? null;
+    error.apiSubcode = payload.error?.error_subcode ?? null;
+    error.apiType = payload.error?.type ?? null;
+    throw error;
   }
 
   return payload;
