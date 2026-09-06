@@ -39,7 +39,8 @@ TASK-01부터 TASK-04까지 완료했다. TASK-05부터 TASK-11까지 구현을 
 ├── .dev.vars.example
 ├── migrations/
 │   ├── 0001_init.sql                # D1 초기 스키마와 공통 키워드
-│   └── 0002_follow_confirmation_flow.sql # 팔로우 안내 문구 2종
+│   ├── 0002_follow_confirmation_flow.sql # 팔로우 확인 흐름 초기 스키마
+│   └── 0003_common_follow_messages.sql # 팔로우 안내 문구를 공통 설정으로 전환
 ├── instagram_dm_auto_reply_design.md # 설계
 ├── status.md                         # 개발 순서 및 현황
 ├── docs/
@@ -106,7 +107,7 @@ GitHub `main`과 Cloudflare Workers Builds가 연결되어 있어 push 시 운�
 - 목표 키워드 규칙은 쉼표 구분·contains이며, 빈 릴스별 키워드는 D1 공통 키워드를 사용한다.
 - 팔로워임을 확인한 경우에만 최종 메시지를 발송한다. 비팔로워와 조회 실패에는 재확인 안내를 보낸다.
 - 댓글의 최초 Private Reply에는 팔로우 확인 빠른 답장을 넣고, 버튼 선택 후 팔로우를 조회한다.
-- 최초 팔로우 확인 안내와 미팔로우 재확인 안내는 릴스별로 관리한다.
+- 최초 팔로우 확인 안내와 미팔로우 재확인 안내는 접을 수 있는 공통 설정에서 관리한다.
 - 같은 사용자의 새 댓글은 다시 처리할 수 있으며 사용자별 1회 제한을 추가하지 않는다.
 - 관리자 목록은 최신순, 제목은 caption 첫 줄, 페이지 크기는 20/50/100으로 제공한다.
 

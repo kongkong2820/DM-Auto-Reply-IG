@@ -13,9 +13,13 @@ Worker 코드와 `.dev.vars.example`에서 `PRIVATE_REPLY_MESSAGE`, Runtime `COM
 댓글 작성만으로는 팔로우 조회 consent가 생기지 않는 실제 결과를 반영해
 빠른 답장 기반 확인 흐름을 구현했다. 키워드 댓글에는 최초 안내와 `팔로우
 확인 🙌🏻` 버튼을 보내고, 버튼 선택 Webhook에서 팔로우를 조회한다. 팔로워면
-기존 최종 메시지를 보내며, 비팔로워 또는 조회 실패면 릴스별 재확인 안내와
+기존 최종 메시지를 보내며, 비팔로워 또는 조회 실패면 공통 재확인 안내와
 `팔로우 완료했어요 🙌🏻` 버튼을 보낸다. payload의 릴스 ID로 설정을 다시
 조회하므로 사용자별 진행 상태는 저장하지 않는다.
+
+최초 안내와 재확인 안내는 `app_settings`의 공통값으로 수정했다. 관리자
+화면의 공통 키워드 및 안내 문구 2종은 기본적으로 접힌 `공통 설정` 영역에서
+한 번에 저장한다. 릴스별 행에는 최종 자동 DM과 댓글 키워드만 표시한다.
 
 ## 변경 파일
 
@@ -25,6 +29,7 @@ Worker 코드와 `.dev.vars.example`에서 `PRIVATE_REPLY_MESSAGE`, Runtime `COM
 - `src/webhook.js`
 - `src/admin.js`
 - `migrations/0002_follow_confirmation_flow.sql`
+- `migrations/0003_common_follow_messages.sql`
 - `.dev.vars.example`
 - `README.md`
 - `status.md`
@@ -52,9 +57,9 @@ Worker 코드와 `.dev.vars.example`에서 `PRIVATE_REPLY_MESSAGE`, Runtime `COM
 
 ## 남은 문제와 후속 작업
 
-- 배포 전 `ADMIN_PASSWORD` Cloudflare Secret을 등록해야 한다.
 - D1 `0002_follow_confirmation_flow.sql`을 운영 DB에 적용했다.
-- Meta Webhook에서 `messages` 필드를 구독해야 한다.
+- D1 `0003_common_follow_messages.sql`을 운영 DB에 적용해야 한다.
+- Meta Webhook `messages` 필드는 구독 상태임을 사용자가 확인했다.
 - 빠른 답장 버튼 선택 후 팔로우·미팔로우 분기를 실제 확인해야 한다.
 - 통합 검증이 성공하면 운영의 `PRIVATE_REPLY_MESSAGE`, `COMMENT_KEYWORDS`, `KEYWORD_MATCH_MODE`를 제거한다.
 - 테스트 결과에 따라 TASK-05부터 TASK-11까지 완료 상태와 증거를 갱신한다.

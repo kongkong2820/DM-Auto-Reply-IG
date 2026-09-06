@@ -166,10 +166,6 @@ async function getReels(url, env) {
       timestamp: media.timestamp,
       enabled: config?.enabled ?? 0,
       autoDmMessage: config?.autoDmMessage ?? "",
-      followPromptMessage:
-        config?.followPromptMessage ?? DEFAULT_FOLLOW_PROMPT_MESSAGE,
-      followRetryMessage:
-        config?.followRetryMessage ?? DEFAULT_FOLLOW_RETRY_MESSAGE,
       commentKeywords: config?.commentKeywords ?? ""
     };
   });
@@ -196,8 +192,6 @@ async function saveReel(reelId, request, env) {
   if (
     ![true, false, 1, 0].includes(body.enabled) ||
     typeof body.autoDmMessage !== "string" ||
-    typeof body.followPromptMessage !== "string" ||
-    typeof body.followRetryMessage !== "string" ||
     typeof body.commentKeywords !== "string"
   ) {
     throw new HttpError(400, "릴스 설정 형식이 올바르지 않습니다.");
@@ -205,13 +199,6 @@ async function saveReel(reelId, request, env) {
 
   if (body.autoDmMessage.length > 10000) {
     throw new HttpError(400, "DM 메시지는 10,000자 이하여야 합니다.");
-  }
-
-  if (
-    body.followPromptMessage.length > 10000 ||
-    body.followRetryMessage.length > 10000
-  ) {
-    throw new HttpError(400, "팔로우 안내 문구는 10,000자 이하여야 합니다.");
   }
 
   if (body.commentKeywords.length > 2000) {
@@ -222,8 +209,6 @@ async function saveReel(reelId, request, env) {
     reelId,
     enabled: body.enabled,
     autoDmMessage: body.autoDmMessage,
-    followPromptMessage: body.followPromptMessage,
-    followRetryMessage: body.followRetryMessage,
     commentKeywords: body.commentKeywords
   });
 
@@ -233,8 +218,20 @@ async function saveReel(reelId, request, env) {
 async function getSettings(env) {
   const commentKeywords =
     await getAppSetting(env.DB, "COMMENT_KEYWORDS") ?? "";
+  const followPromptMessage =
+    await getAppSetting(env.DB, "FOLLOW_PROMPT_MESSAGE") ??
+    DEFAULT_FOLLOW_PROMPT_MESSAGE;
+  const followRetryMessage =
+    await getAppSetting(env.DB, "FOLLOW_RETRY_MESSAGE") ??
+    DEFAULT_FOLLOW_RETRY_MESSAGE;
 
-  return jsonResponse({ data: { commentKeywords } });
+  return jsonResponse({
+    data: {
+      commentKeywords,
+      followPromptMessage,
+      followRetryMessage
+    }
+  });
 }
 
 async function saveSettings(request, env) {
@@ -242,11 +239,17 @@ async function saveSettings(request, env) {
 
   if (
     typeof body.commentKeywords !== "string" ||
-    body.commentKeywords.length > 2000
+    body.commentKeywords.length > 2000 ||
+    typeof body.followPromptMessage !== "string" ||
+    !body.followPromptMessage.trim() ||
+    body.followPromptMessage.length > 10000 ||
+    typeof body.followRetryMessage !== "string" ||
+    !body.followRetryMessage.trim() ||
+    body.followRetryMessage.length > 10000
   ) {
     throw new HttpError(
       400,
-      "공통 키워드는 2,000자 이하 문자열이어야 합니다."
+      "공통 설정 형식이 올바르지 않습니다."
     );
   }
 
@@ -255,8 +258,24 @@ async function saveSettings(request, env) {
     "COMMENT_KEYWORDS",
     body.commentKeywords
   );
+  const followPromptMessage = await setAppSetting(
+    env.DB,
+    "FOLLOW_PROMPT_MESSAGE",
+    body.followPromptMessage
+  );
+  const followRetryMessage = await setAppSetting(
+    env.DB,
+    "FOLLOW_RETRY_MESSAGE",
+    body.followRetryMessage
+  );
 
-  return jsonResponse({ data: { commentKeywords } });
+  return jsonResponse({
+    data: {
+      commentKeywords,
+      followPromptMessage,
+      followRetryMessage
+    }
+  });
 }
 
 function titleFromCaption(caption) {
@@ -383,15 +402,19 @@ const ADMIN_HTML = `<!doctype html>
     .topbar { display: flex; align-items: center; justify-content: space-between;
       gap: 16px; margin-bottom: 20px; }
     .topbar h1 { margin: 0; font-size: 25px; }
-    .settings { display: grid; grid-template-columns: 1fr auto; gap: 12px;
-      align-items: end; padding: 18px; margin-bottom: 18px; }
+    .settings { margin-bottom: 18px; }
+    .settings summary { padding: 18px; cursor: pointer; font-weight: 800; }
+    .settings-panel { display: grid;
+      grid-template-columns: repeat(3, minmax(240px, 1fr)) auto;
+      gap: 12px; align-items: end; padding: 0 18px 18px; }
+    .settings-panel .status { grid-column: 1 / -1; }
     label { display: grid; gap: 7px; font-size: 14px; font-weight: 700; }
     .controls { display: flex; justify-content: space-between; align-items: center;
       gap: 12px; margin: 16px 0 10px; }
     .size { display: flex; align-items: center; gap: 8px; color: var(--muted); }
     .size select { width: auto; }
     .table-wrap { overflow-x: auto; }
-    table { width: 100%; min-width: 1820px; border-collapse: collapse; }
+    table { width: 100%; min-width: 1160px; border-collapse: collapse; }
     th, td { border-bottom: 1px solid var(--line); padding: 13px 10px;
       text-align: left; vertical-align: top; }
     th { background: #f8fafc; color: var(--muted); font-size: 13px; }
@@ -410,7 +433,7 @@ const ADMIN_HTML = `<!doctype html>
     [hidden] { display: none !important; }
     @media (max-width: 680px) {
       .shell { padding: 18px 12px 36px; }
-      .settings { grid-template-columns: 1fr; }
+      .settings-panel { grid-template-columns: 1fr; }
       .topbar { align-items: flex-start; }
     }
   </style>
@@ -435,13 +458,22 @@ const ADMIN_HTML = `<!doctype html>
         <button id="logout" class="secondary" type="button">로그아웃</button>
       </header>
 
-      <section class="card settings">
-        <label>공통 댓글 키워드
-          <input id="common-keywords" maxlength="2000" placeholder="자료,신청">
-        </label>
-        <button id="save-settings" type="button">공통 설정 저장</button>
-        <div id="settings-status" class="status" role="status"></div>
-      </section>
+      <details class="card settings">
+        <summary>공통 설정</summary>
+        <div class="settings-panel">
+          <label>공통 댓글 키워드
+            <input id="common-keywords" maxlength="2000" placeholder="자료,신청">
+          </label>
+          <label>최초 팔로우 확인 안내
+            <textarea id="common-follow-prompt" maxlength="10000"></textarea>
+          </label>
+          <label>미팔로우 재확인 안내
+            <textarea id="common-follow-retry" maxlength="10000"></textarea>
+          </label>
+          <button id="save-settings" type="button">공통 설정 저장</button>
+          <div id="settings-status" class="status" role="status"></div>
+        </div>
+      </details>
 
       <div class="controls">
         <div id="list-status" class="status" role="status"></div>
@@ -458,7 +490,6 @@ const ADMIN_HTML = `<!doctype html>
         <table>
           <thead><tr>
             <th>사용</th><th>제목</th><th>올린 날짜</th><th>릴스 ID</th>
-            <th>최초 팔로우 확인 안내</th><th>미팔로우 재확인 안내</th>
             <th>최종 자동 DM 메시지</th><th>댓글 키워드</th><th>저장</th>
           </tr></thead>
           <tbody id="reels"></tbody>
@@ -536,10 +567,14 @@ const ADMIN_HTML = `<!doctype html>
         var payload = await api("/api/admin/settings", {
           method: "PUT",
           body: JSON.stringify({
-            commentKeywords: document.getElementById("common-keywords").value
+            commentKeywords: document.getElementById("common-keywords").value,
+            followPromptMessage: document.getElementById("common-follow-prompt").value,
+            followRetryMessage: document.getElementById("common-follow-retry").value
           })
         });
         document.getElementById("common-keywords").value = payload.data.commentKeywords;
+        document.getElementById("common-follow-prompt").value = payload.data.followPromptMessage;
+        document.getElementById("common-follow-retry").value = payload.data.followRetryMessage;
         setStatus("settings-status", "저장했습니다.", "success");
       } catch (error) {
         setStatus("settings-status", error.message, "error");
@@ -556,6 +591,8 @@ const ADMIN_HTML = `<!doctype html>
     async function loadAll() {
       var settings = await api("/api/admin/settings");
       document.getElementById("common-keywords").value = settings.data.commentKeywords;
+      document.getElementById("common-follow-prompt").value = settings.data.followPromptMessage;
+      document.getElementById("common-follow-retry").value = settings.data.followRetryMessage;
       await loadReels();
     }
 
@@ -597,12 +634,6 @@ const ADMIN_HTML = `<!doctype html>
         addTextCell(tr, formatDate(row.timestamp), "date");
         addTextCell(tr, row.reelId, "id");
 
-        var followPrompt = messageInput(row.followPromptMessage);
-        addCell(tr, followPrompt);
-
-        var followRetry = messageInput(row.followRetryMessage);
-        addCell(tr, followRetry);
-
         var message = messageInput(row.autoDmMessage);
         addCell(tr, message);
 
@@ -628,15 +659,11 @@ const ADMIN_HTML = `<!doctype html>
               body: JSON.stringify({
                 enabled: enabled.checked,
                 autoDmMessage: message.value,
-                followPromptMessage: followPrompt.value,
-                followRetryMessage: followRetry.value,
                 commentKeywords: keywords.value
               })
             });
             enabled.checked = payload.data.enabled === 1;
             message.value = payload.data.autoDmMessage;
-            followPrompt.value = payload.data.followPromptMessage;
-            followRetry.value = payload.data.followRetryMessage;
             keywords.value = payload.data.commentKeywords;
             status.textContent = "저장됨";
             status.className = "row-status success";

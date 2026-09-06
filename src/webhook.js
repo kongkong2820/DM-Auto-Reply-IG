@@ -1,4 +1,9 @@
-import { getAppSetting, getReelConfig } from "./db.js";
+import {
+  DEFAULT_FOLLOW_PROMPT_MESSAGE,
+  DEFAULT_FOLLOW_RETRY_MESSAGE,
+  getAppSetting,
+  getReelConfig
+} from "./db.js";
 import {
   checkFollowStatus,
   sendPrivateReplyWithQuickReply,
@@ -118,7 +123,11 @@ async function processCommentEvent(event, env) {
     return "keyword_not_matched";
   }
 
-  const followPromptMessage = config.followPromptMessage.trim();
+  const followPromptMessage = await getCommonMessage(
+    env.DB,
+    "FOLLOW_PROMPT_MESSAGE",
+    DEFAULT_FOLLOW_PROMPT_MESSAGE
+  );
 
   if (!followPromptMessage) {
     return "follow_prompt_empty";
@@ -159,7 +168,11 @@ async function processQuickReplyEvent(event, env) {
     return "final_reply_sent";
   }
 
-  const retryMessage = config.followRetryMessage.trim();
+  const retryMessage = await getCommonMessage(
+    env.DB,
+    "FOLLOW_RETRY_MESSAGE",
+    DEFAULT_FOLLOW_RETRY_MESSAGE
+  );
 
   if (!retryMessage) {
     return "follow_retry_empty";
@@ -260,6 +273,10 @@ function parseFollowPayload(value) {
 
   const reelId = value.slice(FOLLOW_PAYLOAD_PREFIX.length);
   return /^\d{1,64}$/.test(reelId) ? reelId : null;
+}
+
+async function getCommonMessage(db, key, fallback) {
+  return (await getAppSetting(db, key) ?? fallback).trim();
 }
 
 function matchesKeyword(comment, configuredKeywords) {

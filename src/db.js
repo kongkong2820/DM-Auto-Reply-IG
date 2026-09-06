@@ -10,8 +10,6 @@ export async function getReelConfig(db, reelId) {
       `SELECT
         reel_id,
         auto_dm_message,
-        follow_prompt_message,
-        follow_retry_message,
         comment_keywords,
         enabled
       FROM reel_dm_config
@@ -27,10 +25,6 @@ export async function getReelConfig(db, reelId) {
   return {
     reelId: row.reel_id,
     autoDmMessage: row.auto_dm_message ?? "",
-    followPromptMessage:
-      row.follow_prompt_message ?? DEFAULT_FOLLOW_PROMPT_MESSAGE,
-    followRetryMessage:
-      row.follow_retry_message ?? DEFAULT_FOLLOW_RETRY_MESSAGE,
     commentKeywords: row.comment_keywords ?? "",
     enabled: row.enabled === 1 ? 1 : 0
   };
@@ -61,8 +55,6 @@ export async function getReelConfigs(db, reelIds) {
       `SELECT
         reel_id,
         auto_dm_message,
-        follow_prompt_message,
-        follow_retry_message,
         comment_keywords,
         enabled
       FROM reel_dm_config
@@ -76,10 +68,6 @@ export async function getReelConfigs(db, reelIds) {
     configs.set(row.reel_id, {
       reelId: row.reel_id,
       autoDmMessage: row.auto_dm_message ?? "",
-      followPromptMessage:
-        row.follow_prompt_message ?? DEFAULT_FOLLOW_PROMPT_MESSAGE,
-      followRetryMessage:
-        row.follow_retry_message ?? DEFAULT_FOLLOW_RETRY_MESSAGE,
       commentKeywords: row.comment_keywords ?? "",
       enabled: row.enabled === 1 ? 1 : 0
     });
@@ -93,8 +81,6 @@ export async function upsertReelConfig(
   {
     reelId,
     autoDmMessage,
-    followPromptMessage,
-    followRetryMessage,
     commentKeywords,
     enabled
   }
@@ -104,19 +90,11 @@ export async function upsertReelConfig(
   const normalizedMessage = autoDmMessage === undefined
     ? existing?.autoDmMessage ?? ""
     : normalizeText(autoDmMessage, "autoDmMessage");
-  const normalizedFollowPrompt = followPromptMessage === undefined
-    ? existing?.followPromptMessage ?? DEFAULT_FOLLOW_PROMPT_MESSAGE
-    : normalizeText(followPromptMessage, "followPromptMessage");
-  const normalizedFollowRetry = followRetryMessage === undefined
-    ? existing?.followRetryMessage ?? DEFAULT_FOLLOW_RETRY_MESSAGE
-    : normalizeText(followRetryMessage, "followRetryMessage");
   const normalizedKeywords = commentKeywords === undefined
     ? existing?.commentKeywords ?? ""
     : normalizeText(commentKeywords, "commentKeywords");
   const normalizedEnabled = normalizeEnabled(enabled);
-  const storedEnabled = normalizedMessage.trim() &&
-    normalizedFollowPrompt.trim() &&
-    normalizedFollowRetry.trim()
+  const storedEnabled = normalizedMessage.trim()
     ? normalizedEnabled
     : 0;
 
@@ -125,24 +103,18 @@ export async function upsertReelConfig(
       `INSERT INTO reel_dm_config (
         reel_id,
         auto_dm_message,
-        follow_prompt_message,
-        follow_retry_message,
         comment_keywords,
         enabled
       )
-      VALUES (?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?)
       ON CONFLICT(reel_id) DO UPDATE SET
         auto_dm_message = excluded.auto_dm_message,
-        follow_prompt_message = excluded.follow_prompt_message,
-        follow_retry_message = excluded.follow_retry_message,
         comment_keywords = excluded.comment_keywords,
         enabled = excluded.enabled`
     )
     .bind(
       normalizedReelId,
       normalizedMessage,
-      normalizedFollowPrompt,
-      normalizedFollowRetry,
       normalizedKeywords,
       storedEnabled
     )
