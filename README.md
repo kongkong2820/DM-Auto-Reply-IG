@@ -120,6 +120,8 @@ GitHub `main`과 Cloudflare Workers Builds가 연결되어 있어 push 시 운�
 - 실제 배포 파일은 `src/index.js`에서 참조하는 `src/` 모듈이다. 루트 `worker.js`는 보관본이므로 수정하지 않는다.
 - 운영 반영 전 캐러셀의 댓글 → 팔로우 확인 버튼 → 최종 DM 흐름을 실계정으로 검증한다. 테스트 파일은 Meta API 호출을 모의 처리하므로 실제 전달 성공을 보장하지 않는다.
 
+배포 확인: GitHub `main`에 커밋한 후 Cloudflare Workers **Deployments**에서 최신 빌드 상태와 **Active deployment**를 확인한다. 실계정 댓글과 DM 발송 검증은 관리자 화면에서 직접 수행한다.
+
 ## 통합 테스트 전 준비
 
 1. Cloudflare에 `ADMIN_PASSWORD` Secret을 등록한다.
