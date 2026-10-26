@@ -50,7 +50,8 @@ export async function getMediaList(
     data: payload.data
       .filter(
         (media) =>
-          media.media_product_type === "REELS" &&
+          (media.media_product_type === "REELS" ||
+            media.media_type === "CAROUSEL_ALBUM") &&
           media.id !== undefined &&
           media.id !== null
       )

@@ -163,6 +163,7 @@ async function getReels(url, env) {
     return {
       reelId: media.id,
       title: titleFromCaption(media.caption),
+      mediaType: media.mediaType,
       timestamp: media.timestamp,
       enabled: config?.enabled ?? 0,
       autoDmMessage: config?.autoDmMessage ?? "",
@@ -184,7 +185,7 @@ async function getReels(url, env) {
 
 async function saveReel(reelId, request, env) {
   if (!/^\d{1,64}$/.test(reelId)) {
-    throw new HttpError(400, "릴스 ID 형식이 올바르지 않습니다.");
+    throw new HttpError(400, "게시물 ID 형식이 올바르지 않습니다.");
   }
 
   const body = await readJsonBody(request);
@@ -194,7 +195,7 @@ async function saveReel(reelId, request, env) {
     typeof body.autoDmMessage !== "string" ||
     typeof body.commentKeywords !== "string"
   ) {
-    throw new HttpError(400, "릴스 설정 형식이 올바르지 않습니다.");
+    throw new HttpError(400, "게시물 설정 형식이 올바르지 않습니다.");
   }
 
   if (body.autoDmMessage.length > 10000) {
@@ -489,14 +490,14 @@ const ADMIN_HTML = `<!doctype html>
       <section class="card table-wrap">
         <table>
           <thead><tr>
-            <th>사용</th><th>제목</th><th>올린 날짜</th><th>릴스 ID</th>
+            <th>사용</th><th>제목</th><th>유형</th><th>올린 날짜</th><th>게시물 ID</th>
             <th>최종 자동 DM 메시지</th><th>댓글 키워드</th><th>저장</th>
           </tr></thead>
           <tbody id="reels"></tbody>
         </table>
-        <div id="empty" class="empty" hidden>표시할 릴스가 없습니다.</div>
+        <div id="empty" class="empty" hidden>표시할 게시물이 없습니다.</div>
       </section>
-      <nav id="pagination" class="pagination" aria-label="릴스 페이지"></nav>
+      <nav id="pagination" class="pagination" aria-label="게시물 페이지"></nav>
     </section>
   </main>
 
@@ -597,7 +598,7 @@ const ADMIN_HTML = `<!doctype html>
     }
 
     async function loadReels() {
-      setStatus("list-status", "릴스를 불러오는 중입니다.");
+      setStatus("list-status", "게시물을 불러오는 중입니다.");
       tbody.replaceChildren();
       empty.hidden = true;
       var cursor = state.cursors[state.page - 1];
@@ -614,7 +615,7 @@ const ADMIN_HTML = `<!doctype html>
         renderRows(payload.data);
         renderPagination();
         empty.hidden = payload.data.length !== 0;
-        setStatus("list-status", payload.data.length + "개 릴스를 표시합니다.");
+        setStatus("list-status", payload.data.length + "개 게시물을 표시합니다.");
       } catch (error) {
         if (!login.hidden) return;
         setStatus("list-status", error.message, "error");
@@ -631,6 +632,7 @@ const ADMIN_HTML = `<!doctype html>
         enabled.checked = row.enabled === 1;
         addCell(tr, enabled);
         addTextCell(tr, row.title, "title");
+        addTextCell(tr, row.mediaType === "CAROUSEL_ALBUM" ? "캐러셀" : "릴스");
         addTextCell(tr, formatDate(row.timestamp), "date");
         addTextCell(tr, row.reelId, "id");
 
